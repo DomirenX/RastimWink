@@ -2,7 +2,7 @@ from email.utils import format_datetime
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
-from app.model.user import UserRole
+from app.models.user import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr

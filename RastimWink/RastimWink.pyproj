@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>RastimWink</Name>
     <RootNamespace>RastimWink</RootNamespace>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,17 +35,17 @@
     <Compile Include="app\models\task.py" />
     <Compile Include="app\models\user.py" />
     <Compile Include="app\models\__init__.py" />
-    <Compile Include="app\shemas\notification.py" />
-    <Compile Include="app\shemas\task.py" />
-    <Compile Include="app\shemas\user.py" />
-    <Compile Include="app\shemas\__init__.py" />
+    <Compile Include="app\schemas\notification.py" />
+    <Compile Include="app\schemas\task.py" />
+    <Compile Include="app\schemas\user.py" />
+    <Compile Include="app\schemas\__init__.py" />
     <Compile Include="app\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="app\" />
     <Folder Include="app\models\" />
     <Folder Include="app\crud\" />
-    <Folder Include="app\shemas\" />
+    <Folder Include="app\schemas\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="docker-compose.yml" />
