@@ -1,5 +1,5 @@
 from time import timezone
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
@@ -32,7 +32,12 @@ class Task(Base):
     created_at = Column(DateTime(timezone = True), server_default = func.now())
     updated_at = Column(DateTime(timezone = True), onupdate = func.now())
     deadline = Column(DateTime(timezone = True))
+    comments_required = Column(Boolean, default = False)
+    min_comments = Column(Integer, default = 5)
+    comments_received = Column(Integer, default = 0)
 
     assignee = relationship("User", foreign_keys = [assignee_id], back_populates = "tasks_assigned")
     creator = relationship("User", foreign_keys = [creator_id], back_populates = "tasks_created")
     department = relationship("Department", back_populates = "tasks")
+    employee_comments = relationship("EmployeeComment", back_populates = "task")
+    manager_review = relationship("ManagerReview", back_populates = "task", uselist = False)
