@@ -5,14 +5,14 @@ INSERT INTO departments (name) VALUES
 ('Менеджмент');
 
 INSERT INTO users (email, password_hash, full_name, role, department_id) VALUES 
-('admin@wink.com', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6M6M6', 'Администратор Системы', 'admin', 4);
+('admin@wink.ru', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6M6M6', 'Администратор Системы', 'admin', 4);
 
 INSERT INTO users (email, password_hash, full_name, role, department_id) VALUES 
-('hr@wink.com', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6M6', 'HR Сотрудник', 'hr', 1);
+('hr@wink.ru', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6M6', 'HR Сотрудник', 'hr', 1);
 
 INSERT INTO users (email, password_hash, full_name, role, department_id) VALUES 
-('manager@wink.com', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6M6', 'Менеджер Проектов', 'manager', 4);
+('manager@wink.ru', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6M6', 'Менеджер Проектов', 'manager', 4);
 
 INSERT INTO users (email, password_hash, full_name, role, department_id) VALUES 
-('employee1@wink.com', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6', 'Сотрудник разработки', 'employee', 2),
-('employee2@wink.com', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6', 'Сотрудник данных', 'employee', 3);
+('employee1@wink.ru', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6', 'Сотрудник разработки', 'employee', 2),
+('employee2@wink.ru', '$2b$12$LQv3c1yqBWVHxkd0L8k7Oe7M7M6M6M6M6M6M6M6M6M6M6M6M6', 'Сотрудник данных', 'employee', 3);

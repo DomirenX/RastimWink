@@ -1,21 +1,33 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+from datetime import timedelta
+from app.database import get_db
+from app.auth import authenticate_user, create_access_token, get_password_hash, get_current_user
+from app.models.user import User, UserRole
+from app.schemas.user import UserCreate, UserLogin, UserResponse
+from app.crud.stats import get_employee_detailed_stats, get_company_stats
+from app.crud import user as user_crud
+from app.core.security import verify_set_password_token
+import enum
 from pydantic import BaseModel
 from typing import List, Optional
-import enum
 import hashlib
-import jwt
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime, timedelta
+import jwt
+from app.schemas.analytics import GARResponse
+from app.crud.gar import calculate_gar, get_gar_weights_db, update_gar_weights_db
 
-app = FastAPI(title="Wink Internal API")
+
+app = FastAPI(title = "Wink Internal API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins = ["*"],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"],
 )
 
 SECRET_KEY = "krasnodiplomshik"
@@ -60,7 +72,8 @@ class TaskPriority(str, enum.Enum):
 
 class User(BaseModel):
     id: int
-    email: str
+    personal_email: str
+    corporate_email: str
     full_name: str
     role: UserRole
     department_id: Optional[int] = None
@@ -80,10 +93,11 @@ class Task(BaseModel):
 
 class Idea(BaseModel):
     id: int
-    title: str
-    description: str
-    author_id: int
-    status: str = "pending"
+    task_id: int
+    employee_id: int
+    comment: str
+    created_at: str
+    employee_name: str = ""
 
 class EmployeeComment(BaseModel):
     id: int
@@ -112,18 +126,18 @@ class Token(BaseModel):
     user: User
 
 mock_users = [
-    User(id=1, email="admin@wink.com", full_name="Admin User", role=UserRole.admin, department_id=1),
-    User(id=2, email="manager@wink.com", full_name="Manager User", role=UserRole.manager, department_id=1),
-    User(id=3, email="employee1@wink.com", full_name="Employee One", role=UserRole.employee, department_id=2),
-    User(id=4, email="employee2@wink.com", full_name="Employee Two", role=UserRole.employee, department_id=2),
-    User(id=5, email="employee3@wink.com", full_name="Employee Three", role=UserRole.employee, department_id=2),
-    User(id=6, email="employee4@wink.com", full_name="Employee Four", role=UserRole.employee, department_id=2),
-    User(id=7, email="employee5@wink.com", full_name="Employee Five", role=UserRole.employee, department_id=2),
+    User(id = 1, email = "admin@wink.ru", full_name = "Admin User", role = UserRole.admin, department_id = 1),
+    User(id = 2, email = "manager@wink.ru", full_name = "Manager User", role = UserRole.manager, department_id = 1),
+    User(id = 3, email = "employee1@wink.ru", full_name = "Employee One", role = UserRole.employee, department_id = 2),
+    User(id = 4, email = "employee2@wink.ru", full_name = "Employee Two", role = UserRole.employee, department_id = 2),
+    User(id = 5, email = "employee3@wink.ru", full_name = "Employee Three", role = UserRole.employee, department_id = 2),
+    User(id = 6, email = "employee4@wink.ru", full_name = "Employee Four", role = UserRole.employee, department_id = 2),
+    User(id = 7, email = "employee5@wink.ru", full_name = "Employee Five", role = UserRole.employee, department_id = 2),
 ]
 
 mock_tasks = [
-    Task(id=1, title="Setup database", description="Initialize PostgreSQL", assignee_id=3, creator_id=2, status="in_progress", priority="high", created_at="2024-01-01"),
-    Task(id=2, title="Create API", description="Build REST endpoints", assignee_id=3, creator_id=2, status="pending", priority="critical", created_at="2024-01-01"),
+    Task(id = 1, title = "Сделать базу данных", description = "Инициализировать PostgreSQL", assignee_id = 3, creator_id = 2, status = "in_progress", priority = "high", created_at = "2025-11-01"),
+    Task(id = 2, title = "Создать API", description = "Сделать систему предложения сотрудником идей и тасков", assignee_id = 3, creator_id = 2, status = "pending", priority = "critical", created_at = "2025-10-01"),
 ]
 
 mock_ideas = []
@@ -131,13 +145,13 @@ mock_comments = []
 mock_manager_reviews = []
 
 user_password_hashes = {
-    "admin@wink.com": get_password_hash("admin123"),
-    "manager@wink.com": get_password_hash("manager123"),
-    "employee1@wink.com": get_password_hash("employee123"),
-    "employee2@wink.com": get_password_hash("employee123"),
-    "employee3@wink.com": get_password_hash("employee123"),
-    "employee4@wink.com": get_password_hash("employee123"),
-    "employee5@wink.com": get_password_hash("employee123"),
+    "admin@wink.ru": get_password_hash("admin123"),
+    "manager@wink.ru": get_password_hash("manager123"),
+    "employee1@wink.ru": get_password_hash("employee123"),
+    "employee2@wink.ru": get_password_hash("employee123"),
+    "employee3@wink.ru": get_password_hash("employee123"),
+    "employee4@wink.ru": get_password_hash("employee123"),
+    "employee5@wink.ru": get_password_hash("employee123"),
 }
 
 def get_user_by_email(email: str) -> Optional[User]:
@@ -170,32 +184,64 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="User not found")
     
     return user
-
+    
 @app.get("/")
 def root():
-    return {
-        "message": "Wink Internal API - WORKING!",
-        "version": "1.1",
-        "features": ["tasks", "ideas", "comments_system", "analytics", "auth"]
-    }
+    return {"message": "Wink Internal API работает"}
 
-@app.post("/api/auth/login", response_model=Token)
-def login(user_data: UserLogin):
-    user = authenticate_user(user_data.email, user_data.password)
+@app.post("/api/auth/register", response_model = UserResponse)
+def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
+    existing = user_crud.get_user_by_email(db, user_data.email)
+    if existing:
+        raise HTTPException(status_code = 400, detail = "Пользователь уже существует")
+    hashed_password = get_password_hash(user_data.password)
+    user = user_crud.create_user_direct(db, user_data.email, user_data.full_name, hashed_password)
+    return user
+
+@app.post("/api/auth/login")
+def login_user(form_data: UserLogin, db: Session = Depends(get_db)):
+    user = authenticate_user(db, form_data.email, form_data.password)
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, 
-        expires_delta=access_token_expires
-    )
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user
-    }
+        raise HTTPException(status_code = 401, detail = "Неверный email или пароль")
+    access_token_expires = timedelta(minutes = 60 * 24)
+    token = create_access_token({"sub": str(user.id)}, access_token_expires)
+    return {"access_token": token, "token_type": "bearer", "user": user}
+
+@app.get("/api/users", response_model = list[UserResponse])
+def read_all_users(db: Session = Depends(get_db)):
+    return user_crud.get_all_users(db)
+
+@app.get("/api/users/me", response_model = UserResponse)
+def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@app.post("/api/employees/create", response_model = UserResponse)
+def create_employee(first_name: str, last_name: str, personal_email: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    return user_crud.create_user(db, background_tasks, first_name, last_name, personal_email)
+
+@app.post("/api/set-password")
+def set_password(token: str, password: str, db: Session = Depends(get_db)):
+    user_id = verify_set_password_token(token)
+    if not user_id:
+        raise HTTPException(status_code = 400, detail = "Недействительный токен")
+    user = user_crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code = 404, detail = "Пользователь не найден")
+    user.password_hash = get_password_hash(password)
+    user.is_active = True
+    db.commit()
+    return {"message": "Пароль успешно установлен. Аккаунт активирован."}
+
+@app.get("/api/stats/{employee_id}", response_model = dict)
+def get_employee_stats(employee_id: int, db: Session = Depends(get_db)):
+    stats = get_employee_detailed_stats(db, employee_id)
+    if not stats:
+        raise HTTPException(status_code = 404, detail = "Сотрудник не найден")
+    return stats
+
+@app.get("/api/stats/company")
+def get_company_stats_endpoint(db: Session = Depends(get_db)):
+    return get_company_stats(db)
 
 @app.get("/api/tasks")
 def get_tasks(current_user: User = Depends(get_current_user)):
@@ -258,7 +304,7 @@ def assign_commenters(
     
     task.comments_required = True
     task.min_comments = 5
-    
+        
     return {
         "task_id": task_id,
         "assigned_commenters": commenter_ids,
@@ -356,7 +402,7 @@ def submit_manager_review(
         created_at=datetime.now().isoformat(),
         manager_name=current_user.full_name
     )
-    
+
     mock_manager_reviews.append(manager_review)
     
     task.status = TaskStatus.completed
@@ -458,6 +504,40 @@ def health_check():
         "manager_reviews_count": len(mock_manager_reviews),
         "features": ["auth", "tasks", "ideas", "comments_system", "analytics"]
     }
+
+router = APIRouter(prefix="/api/analytics", tags=["analytics"])
+
+@router.get("/employee/{employee_id}/gar", response_model=GARResponse)
+def employee_gar(employee_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    if current_user.role not in [UserRole.admin, UserRole.hr, UserRole.manager] and current_user.id != employee_id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    gar_res, metrics, weights = calculate_gar(db, employee_id)
+    return {
+        "employee_id": employee_id,
+        "employee_name": db.query(__import__("app.models.user", fromlist=["User"]).User).filter(__import__("app.models.user", fromlist=["User"]).User.id == employee_id).first().full_name,
+        "metrics": metrics,
+        "GAR": float(gar_res["GAR"]),
+        "weights": weights
+    }
+
+class GARWeightsIn(BaseModel):
+    TCR: Optional[float] = None
+    GoalProgress: Optional[float] = None
+    Timeliness: Optional[float] = None
+    Quality: Optional[float] = None
+
+@router.put("/gar-weights")
+def update_gar_weights(payload: GARWeightsIn, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    if current_user.role != UserRole.admin:
+        raise HTTPException(status_code=403, detail="Only admin can update weights")
+    updated = update_gar_weights_db(
+        db,
+        w_tcr = payload.TCR,
+        w_goal = payload.GoalProgress,
+        w_timeliness = payload.Timeliness,
+        w_quality = payload.Quality
+    )
+    return {"message": "updated", "weights": updated}
 
 if __name__ == "__main__":
     import uvicorn

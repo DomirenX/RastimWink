@@ -1,5 +1,5 @@
 from time import timezone
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, Boolean, Float
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
@@ -35,9 +35,13 @@ class Task(Base):
     comments_required = Column(Boolean, default = False)
     min_comments = Column(Integer, default = 5)
     comments_received = Column(Integer, default = 0)
+    is_quantitative = Column(Boolean, default = False)
+    goal_target = Column(Float, nullable = True)
+    goal_progress = Column(Float, nullable = True)
 
     assignee = relationship("User", foreign_keys = [assignee_id], back_populates = "tasks_assigned")
     creator = relationship("User", foreign_keys = [creator_id], back_populates = "tasks_created")
     department = relationship("Department", back_populates = "tasks")
     employee_comments = relationship("EmployeeComment", back_populates = "task")
     manager_review = relationship("ManagerReview", back_populates = "task", uselist = False)
+    subtasks = relationship("Subtask", back_populates = "task", uselist = False)
