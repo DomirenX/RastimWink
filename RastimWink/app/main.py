@@ -18,9 +18,11 @@ from datetime import datetime, timedelta
 import jwt
 from app.schemas.analytics import GARResponse
 from app.crud.gar import calculate_gar, get_gar_weights_db, update_gar_weights_db
-
+from app.routers.analytics_router import router as analytics_router
 
 app = FastAPI(title = "Wink Internal API")
+
+app.include_router(analytics_router)
 
 app.add_middleware(
     CORSMiddleware,
