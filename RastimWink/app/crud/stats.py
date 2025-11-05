@@ -18,7 +18,7 @@ def update_employee_stats(db: Session, employee_id: int, task_rating: float = No
         current_avg = getattr(stats, "average_rating", 0.0) or 0.0
         new_total = total_reviews + 1
         new_avg = (current_avg * total_reviews + task_rating) / new_total
-        stats.review_count = new_total
+        stats.rating_count = new_total
         stats.average_rating = new_avg
     db.commit()
     db.refresh(stats)

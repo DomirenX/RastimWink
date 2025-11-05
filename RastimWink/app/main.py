@@ -128,13 +128,13 @@ class Token(BaseModel):
     user: User
 
 mock_users = [
-    User(id = 1, email = "admin@wink.ru", full_name = "Admin User", role = UserRole.admin, department_id = 1),
-    User(id = 2, email = "manager@wink.ru", full_name = "Manager User", role = UserRole.manager, department_id = 1),
-    User(id = 3, email = "employee1@wink.ru", full_name = "Employee One", role = UserRole.employee, department_id = 2),
-    User(id = 4, email = "employee2@wink.ru", full_name = "Employee Two", role = UserRole.employee, department_id = 2),
-    User(id = 5, email = "employee3@wink.ru", full_name = "Employee Three", role = UserRole.employee, department_id = 2),
-    User(id = 6, email = "employee4@wink.ru", full_name = "Employee Four", role = UserRole.employee, department_id = 2),
-    User(id = 7, email = "employee5@wink.ru", full_name = "Employee Five", role = UserRole.employee, department_id = 2),
+    User(id = 1, personal_email = "admin@example.ru", corporate_email = "admin@wink.ru", full_name = "Admin User", role = UserRole.admin, department_id = 1),
+    User(id = 2, personal_email = "manager@example.ru", corporate_email = "manager@wink.ru", full_name = "Manager User", role = UserRole.manager, department_id = 1),
+    User(id = 3, personal_email = "employee1@example.ru", corporate_email = "employee1@wink.ru", full_name = "Employee One", role = UserRole.employee, department_id = 2),
+    User(id = 4, personal_email = "employee2@example.ru", corporate_email = "employee2@wink.ru", full_name = "Employee Two", role = UserRole.employee, department_id = 2),
+    User(id = 5, personal_email = "employee3@example.ru", corporate_email = "employee3@wink.ru", full_name = "Employee Three", role = UserRole.employee, department_id = 2),
+    User(id = 6, personal_email = "employee4@example.ru", corporate_email = "employee4@wink.ru", full_name = "Employee Four", role = UserRole.employee, department_id = 2),
+    User(id = 7, personal_email = "employee5@example.ru", corporate_email = "employee5@wink.ru", full_name = "Employee Five", role = UserRole.employee, department_id = 2),
 ]
 
 mock_tasks = [

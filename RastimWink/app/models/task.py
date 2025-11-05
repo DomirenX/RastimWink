@@ -38,6 +38,7 @@ class Task(Base):
     is_quantitative = Column(Boolean, default = False)
     goal_target = Column(Float, nullable = True)
     goal_progress = Column(Float, nullable = True)
+    completed_at = Column(DateTime(timezone = True))
 
     assignee = relationship("User", foreign_keys = [assignee_id], back_populates = "tasks_assigned")
     creator = relationship("User", foreign_keys = [creator_id], back_populates = "tasks_created")
