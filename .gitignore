@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+.DS_STORE
+.gitattributes
+.gitignore
+RastimWink.sln
